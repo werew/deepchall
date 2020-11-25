@@ -1,0 +1,12 @@
+{
+    "nets": {
+        "simple_lstm": {
+            "units" : 10
+        }
+    },
+    "langs": {
+        "toy_fsm": {
+            "max_length": 20
+        }
+    }
+}
