@@ -46,8 +46,8 @@ class Backend:
     """
     raise NotImplementedError("Method gen not implemented")
 
-  def parse(self, sample: np.array) -> int:
+  def parse(self, sample: np.array) -> bool:
     """
-    Takes a sample and returns the appropriate label
+    Takes a sample and returns true if it is well-formed
     """
     raise NotImplementedError("Method label not implemented")

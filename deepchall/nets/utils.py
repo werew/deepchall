@@ -1,5 +1,6 @@
 import numpy as np
 from typing import List
+import tensorflow as tf
 
 def zero_pad_to_length(arrays: List[np.array], length: int, axis: int = 1):
     """
@@ -23,10 +24,10 @@ def zero_pad_to_length(arrays: List[np.array], length: int, axis: int = 1):
 
     return np.concatenate(arrays, axis=0) + 1
 
-#def sample_categorical(preds, temperature: float = 1.0, num_samples: int = 1):
-#    preds = tf.math.log(preds)/temperature
-#    return tf.random.categorical(preds,num_samples=num_samples)
-#
+def sample_categorical(preds, temperature: float = 1.0, num_samples: int = 1):
+    preds = tf.math.log(preds)/temperature
+    return tf.random.categorical(preds,num_samples=num_samples)
+ 
 #def generate(
 #    model: keras.Model, 
 #    alphabet_size: int, 

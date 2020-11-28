@@ -93,16 +93,19 @@ class FSM(Backend):
         for new_state in states:
           queue.append((new_expr, new_state))
 
-  def parse(self, sample: np.array) -> int:
+  def parse(self, sample: np.array) -> bool:
     """
     Parse an expression and return True if it is well formed (i.e. it belongs to
     the language encoded by the FSM and it is recognized by this last)
     """
-    if len(sample) == 0:
+    # We expect samples to have shape (1, N)
+    assert sample.shape[0] == 1
+
+    if sample.shape[1] == 0:
       return self.is_terminal()
 
-    states = self.traverse(sample[0])
+    states = self.traverse(int(sample[0,0]))
     for state in states:
-      if state.parse(sample[1:]):
+      if state.parse(sample[:, 1:]):
         return True
     return False

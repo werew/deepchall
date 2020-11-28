@@ -12,6 +12,7 @@ class Runner:
         "max_samples": 100,
         "max_length": None, 
         "epochs": 10,
+        "test_samples": 100,
     }
 
     def __init__(self, config_path: str):
@@ -84,46 +85,51 @@ class Runner:
             'shape': lang.shape,
         }
 
-        # Some stats about the 
+        # Some stats about the run
         stats = {
-            'samples_generated' : 0,
-            'max_sample_length' : 0,
-            'min_sample_length' : 0,
-            'samples_skipped' : 0,
-            'samples_yielded' : 0,
+            'training_samples_generated' : 0,
+            'max_training_sample_length' : 0,
+            'min_training_sample_length' : 0,
+            'training_samples_skipped' : 0,
+            'training_samples_used' : 0,
+            'correct_generated' : 0,
+            'training_time': 0,
+            'avg_length' : 0,
         }
+
+        # Retrieve the length dimension
+        try:
+            length_index = lang.shape.index(None)
+        except:
+            length_index = None
 
         def _gen():
             max_length = self._langs_config[lang_name]['max_length']
             max_samples = self._langs_config[lang_name]['max_samples']
-            try:
-                length_index = lang.shape.index(ShapePlaceholder.LENGTH)
-            except:
-                length_index = None
             gen = lang.get().gen(max_length=max_length)
-            while stats['samples_generated'] < max_samples:
+            while stats['training_samples_generated'] < max_samples:
                 try:
                     sample = next(gen)
-                    stats['samples_generated'] += 1
+                    stats['training_samples_generated'] += 1
                 except StopIteration:
                     break
 
                 if length_index is not None:
                     # Enforce max_length
                     if sample.shape[length_index] > max_length:
-                        stats['samples_skipped'] += 1
+                        stats['training_samples_skipped'] += 1
                         continue
                     
                     # Update max_sample_length
-                    if sample.shape[length_index] > stats['max_sample_length']:
-                        stats['max_sample_length'] = sample.shape[length_index]
+                    if sample.shape[length_index] > stats['max_training_sample_length']:
+                        stats['max_training_sample_length'] = sample.shape[length_index]
 
                     # Update min_sample_length
-                    if sample.shape[length_index] < stats['min_sample_length']:
-                        stats['min_sample_length'] = sample.shape[length_index]
+                    if sample.shape[length_index] < stats['min_training_sample_length']:
+                        stats['min_training_sample_length'] = sample.shape[length_index]
 
                 # Yield sample
-                stats['samples_yielded'] += 1
+                stats['training_samples_used'] += 1
                 yield sample
 
 
@@ -132,7 +138,23 @@ class Runner:
         start_time = time.time()
         net.train(gen=_gen())
         end_time = time.time()
-        stats['time'] = end_time - start_time
+        stats['training_time'] = end_time - start_time
+
+        bkd = lang.get()
+        sum_lengths = 0
+        test_samples = self._langs_config[lang_name]['test_samples']
+        for _ in range(test_samples):
+            sample = net.gen()
+            if bkd.parse(sample):
+                stats['correct_generated'] += 1
+            if length_index is not None:
+                sum_lengths += sample.shape[length_index]
+
+        if length_index is None:
+            stats['avg_length'] = 'not applicable'
+        else:
+            stats['avg_length'] = sum_lengths / test_samples
+    
         return stats
 
 

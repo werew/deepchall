@@ -6,7 +6,8 @@
     },
     "langs": {
         "toy_fsm": {
-            "max_length": 20
+            "max_length": 20,
+            "epochs": 100
         }
     }
 }
