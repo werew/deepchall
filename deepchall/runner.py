@@ -3,6 +3,7 @@ import time
 from .index import INDEX
 from .backends.backend import ShapePlaceholder
 from typing import Dict
+from tqdm import tqdm, trange
 
 class Runner:
 
@@ -68,22 +69,35 @@ class Runner:
             if name not in INDEX['nets']:
                 raise ValueError('Unknown net'+name)
 
-
-
+    # TODO: this function is insanely long, it needs some refactoring
     def _run_net(self, lang_name: str, net_name: str):
 
-        # Inititalize lang
+        # Get lang config 
+        lang_config = self._langs_config[lang_name]
+
+        # Inititalize lang and get backend
         lang = INDEX['langs'][lang_name]()
-        lang.init(params=self._langs_config[lang_name])
+        lang.init(params=lang_config)
+        bkd = lang.get()
 
         # Collect network initialization params
         net = INDEX['nets'][net_name]()
         net_params = {
-            **self._langs_config[lang_name],
+            **lang_config,
             **self._nets_config[net_name],
             'alphabet_size': lang.alphabet_size,
             'shape': lang.shape,
         }
+
+        # Show lang parameters
+        print("[*] Lang parameters:")
+        for k, v in lang_config.items():
+            print(f"\t{k}: {v}")
+
+        # Show net parameters
+        print("[*] Net parameters:")
+        for k, v in net_params.items():
+            print(f"\t{k}: {v}")
 
         # Some stats about the run
         stats = {
@@ -104,12 +118,14 @@ class Runner:
             length_index = None
 
         def _gen():
-            max_length = self._langs_config[lang_name]['max_length']
-            max_samples = self._langs_config[lang_name]['max_samples']
-            gen = lang.get().gen(max_length=max_length)
+            max_length = lang_config['max_length']
+            max_samples = lang_config['max_samples']
+            gen = bkd.gen(max_length=max_length)
+            pbar = tqdm(total=max_samples)
             while stats['training_samples_generated'] < max_samples:
                 try:
                     sample = next(gen)
+                    pbar.update(1)
                     stats['training_samples_generated'] += 1
                 except StopIteration:
                     break
@@ -131,19 +147,21 @@ class Runner:
                 # Yield sample
                 stats['training_samples_used'] += 1
                 yield sample
+            pbar.close()
 
 
         # Initialize and train the network
         net.init(params=net_params)
+        print(f"[*] Start training")
         start_time = time.time()
         net.train(gen=_gen())
         end_time = time.time()
         stats['training_time'] = end_time - start_time
+        print(f"[*] Training finished")
 
-        bkd = lang.get()
+        print(f"[*] Start testing")
         sum_lengths = 0
-        test_samples = self._langs_config[lang_name]['test_samples']
-        for _ in range(test_samples):
+        for _ in trange(lang_config['test_samples']):
             sample = net.gen()
             if bkd.parse(sample):
                 stats['correct_generated'] += 1
@@ -153,7 +171,8 @@ class Runner:
         if length_index is None:
             stats['avg_length'] = 'not applicable'
         else:
-            stats['avg_length'] = sum_lengths / test_samples
+            stats['avg_length'] = sum_lengths / lang_config['test_samples']
+        print(f"[*] Testing finished")
     
         return stats
 
@@ -161,7 +180,7 @@ class Runner:
     def run(self):
         for lang_name in self._langs_config.keys():
             for net_name in self._nets_config.keys():
-                print(f"[*] Running lang: {lang_name} net: {net_name}")
+                print(f"[*] Running lang: {lang_name} vs {net_name}")
                 stats = self._run_net(lang_name, net_name)
                 print(f"[*] Run finished")
                 print(f"[*] Stats:")
