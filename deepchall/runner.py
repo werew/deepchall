@@ -29,7 +29,7 @@ class Runner:
             self._langs_config[name] = {
                 **Runner.default_lang_params, # start by using default globals
                 **self._unpack_default_params(
-                    INDEX['langs'][name].lang_params # put language-specific defaults
+                    INDEX['langs'][params['lang']].lang_params # put language-specific defaults
                 ),
                 **params, # config params take the precedence on everything
             }
@@ -40,7 +40,7 @@ class Runner:
             self._nets_config[name] = {
                 **Runner.default_net_params,
                 **self._unpack_default_params(
-                    INDEX['nets'][name].net_params
+                    INDEX['nets'][params['net']].net_params
                 ),
                 **params,
             }
@@ -61,30 +61,31 @@ class Runner:
         if not isinstance(config['nets'], dict):
             raise ValueError('Expected a dict for nets key in config')
 
-        for name in config['langs'].keys():
-            if name not in INDEX['langs']:
-                raise ValueError('Unknown language '+name)
+        for val in config['langs'].values():
+            if val['lang'] not in INDEX['langs']:
+                raise ValueError('Unknown language '+val['lang'])
 
-        for name in config['nets'].keys():
-            if name not in INDEX['nets']:
-                raise ValueError('Unknown net'+name)
+        for val in config['nets'].values():
+            if val['net'] not in INDEX['nets']:
+                raise ValueError('Unknown net'+val['net'])
 
     # TODO: this function is insanely long, it needs some refactoring
     def _run_net(self, lang_name: str, net_name: str):
 
-        # Get lang config 
+        # Get configs
         lang_config = self._langs_config[lang_name]
+        net_config = self._nets_config[net_name]
 
         # Inititalize lang and get backend
-        lang = INDEX['langs'][lang_name]()
+        lang = INDEX['langs'][lang_config["lang"]]()
         lang.init(params=lang_config)
         bkd = lang.get()
 
         # Collect network initialization params
-        net = INDEX['nets'][net_name]()
+        net = INDEX['nets'][net_config["net"]]()
         net_params = {
             **lang_config,
-            **self._nets_config[net_name],
+            **net_config,
             'alphabet_size': lang.alphabet_size,
             'shape': lang.shape,
         }
