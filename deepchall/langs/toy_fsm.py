@@ -11,7 +11,7 @@ class ToyFSM(Lang):
     """
     alphabet_size = 3
     shape = (1, None)
-    lang_params = {}
+    extra_params = {}
 
     def init(self, params: Dict) -> None:
         pass 

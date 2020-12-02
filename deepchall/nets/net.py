@@ -28,7 +28,7 @@ class Net:
     }
 
     """
-    net_params = {}
+    extra_params = {}
 
     def init(self, params: Dict) -> None:
         """

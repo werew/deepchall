@@ -70,7 +70,7 @@ class FSM(Backend):
     """
     return self.transitions.get(input_symbol, [])
 
-  def gen(self, max_length: Optional[int] = None) -> Generator[np.array, None, None]:
+  def gen(self) -> Generator[np.array, None, None]:
     """
     Generates up to max_samples well formed expressions beloging to the underlying
     language (see gen).
@@ -84,9 +84,6 @@ class FSM(Backend):
 
       if state.is_terminal():
         yield expr
-
-      if max_length is not None and len(expr) >= max_length:
-        continue
 
       for input_, states in state.transitions.items():
         new_expr = np.concatenate((expr,[[input_]]), axis=1)

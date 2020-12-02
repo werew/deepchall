@@ -36,13 +36,9 @@ class Backend:
   """
   shape = None
 
-  def gen(self, max_length: Optional[int] = None
-    ) -> Generator[np.array, None, None]:
+  def gen(self) -> Generator[np.array, None, None]:
     """
     Generates samples from the underlying backend.
-
-    max_length: max length of the samples to be enforced, if None generate 
-      samples of any length.
     """
     raise NotImplementedError("Method gen not implemented")
 

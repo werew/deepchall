@@ -31,7 +31,7 @@ def langs():
         print(f"description: {l.desc}")
         print(f"shape: {l.shape}")
         print(f"alphabet size: {l.alphabet_size}")
-        print(f"extra params: {l.lang_params}")
+        print(f"extra params: {l.extra_params}")
 
 @show.command()
 def nets():
@@ -39,7 +39,7 @@ def nets():
         print("")
         print(f"name: {name}")
         print(f"description: {n.desc}")
-        print(f"extra params: {n.net_params}")
+        print(f"extra params: {n.extra_params}")
 
 @cli.command()
 @click.argument('config')

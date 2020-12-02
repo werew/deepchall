@@ -2,6 +2,8 @@ import json
 import time
 from .index import INDEX
 from .backends.backend import ShapePlaceholder
+from .nets.net import Net
+from .langs.lang import Lang
 from typing import Dict
 from tqdm import tqdm, trange
 
@@ -16,6 +18,8 @@ class Runner:
         "test_samples": 100,
     }
 
+    default_backend_params = {}
+
     def __init__(self, config_path: str):
         with open(config_path) as fd:
             config = json.load(fd)
@@ -26,26 +30,43 @@ class Runner:
         self._langs_config = {}
         for name, params in config['langs'].items():
             # Merge params
-            self._langs_config[name] = {
-                **Runner.default_lang_params, # start by using default globals
-                **self._unpack_default_params(
-                    INDEX['langs'][params['lang']].lang_params # put language-specific defaults
-                ),
-                **params, # config params take the precedence on everything
-            }
+            self._langs_config[name] = Runner.make_lang_params(
+                lang = INDEX['langs'][params['lang']],
+                user_params=params,
+            )
 
         # Init nets config
         self._nets_config = {}
         for name, params in config['nets'].items():
-            self._nets_config[name] = {
-                **Runner.default_net_params,
-                **self._unpack_default_params(
-                    INDEX['nets'][params['net']].net_params
-                ),
-                **params,
-            }
+            self._nets_config[name] = Runner.make_net_params(
+                net = INDEX['nets'][params['net']],
+                user_params = params,
+            )
 
-    def _unpack_default_params(self, params: Dict) -> Dict:
+    @staticmethod
+    def make_net_params(net: Net, user_params: Dict) -> Dict:
+        # Merge params
+        return {
+            **Runner.default_net_params, # start by using default globals
+            **Runner.unpack_extra_params(
+                net.extra_params # put net-specific defaults
+            ),
+            **user_params, # config params take the precedence on everything
+        }
+
+    @staticmethod
+    def make_lang_params(lang: Lang, user_params: Dict) -> Dict:
+        # Merge params
+        return {
+            **Runner.default_lang_params, # start by using default globals
+            **Runner.unpack_extra_params(
+                lang.extra_params # put language-specific defaults
+            ),
+            **user_params, # config params take the precedence on everything
+        }
+
+    @staticmethod
+    def unpack_extra_params(params: Dict) -> Dict:
         unpacked_params = {}
         for k,v in params.items():
             unpacked_params[k] = v[1]
@@ -121,7 +142,7 @@ class Runner:
         def _gen():
             max_length = lang_config['max_length']
             max_samples = lang_config['max_samples']
-            gen = bkd.gen(max_length=max_length)
+            gen = bkd.gen()
             pbar = tqdm(total=max_samples)
             while stats['training_samples_generated'] < max_samples:
                 try:

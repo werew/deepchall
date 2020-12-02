@@ -1,20 +1,23 @@
 {
     "nets": {
-        "net1": {
+        "net": {
             "net": "simple_lstm",
-            "units" : 10
-        },
-        "net2": {
-            "net": "simple_lstm",
-            "units" : 11
+            "units" :10 
         }
     },
     "langs": {
-        "lang1": {
+        "fsm": {
             "lang": "toy_fsm",
             "max_length": 20,
             "epochs": 500,
-            "max_samples": 200
+            "max_samples": 100
+        },
+        "cfg": {
+            "lang": "toy_cfg",
+            "max_length": 20,
+            "epochs": 2000,
+            "max_samples": 100,
+            "max_depth": 40
         }
     }
 }
